@@ -60,6 +60,7 @@ async def not_document(message:types.Message,state: FSMContext):
 @dp.message_handler(content_types=types.ContentType.DOCUMENT, state=ProfileStatesGroup.Wait_For_Document)
 
 async def send_document(message: types.Message, state: FSMContext):
+    await message.answer("Подождите, документ обрабатывается")
     # Получение информации о документе
     file_id = message.document.file_id
     file_info = await bot.get_file(file_id)
@@ -75,10 +76,15 @@ async def send_document(message: types.Message, state: FSMContext):
             new_file.write(downloaded_file.read())
         # Анализ файла и отправка результата
         dataframe = pd.read_excel('user_uploaded_file.xlsx')
-        all_groups = dataframe['Группа'].unique()
-        await message.answer("Файл успешно загружен и проанализирован.")
-        await message.answer(f"Для начала анализа необходимо выбрать одну из групп:\n{', '.join(all_groups)}")
-        await ProfileStatesGroup.Choose_Group.set()
+        expected_columns = ["Группа", "Оценка","Год", "Личный номер студента", "Уровень контроля"]
+        column = []
+        if all(column in dataframe.columns for column in expected_columns):
+            all_groups = dataframe['Группа'].unique()
+            await message.answer("Файл успешно загружен и проанализирован.")
+            await message.answer(f"Для начала анализа необходимо выбрать одну из групп:\n{', '.join(all_groups)}")
+            await ProfileStatesGroup.Choose_Group.set()
+        else:
+            await message.answer("Пожалуйста, отправьте корректный файл, в котором присутствуют необходимые столбцы")
     else:
         await message.answer("Пожалуйста, отправьте файл в формате Excel (.xlsx).")
 
